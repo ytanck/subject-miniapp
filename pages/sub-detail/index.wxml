@@ -4,7 +4,7 @@
 		{{curItem.title}}
 	</view>
 	<view class="line">详情</view>
-	<view class="desc">{{curItem.desc}}</view>
+	<view class="desc">{{curItem.desc||curItem.title}}</view>
 
 	<view class="content" wx:if="{{isShowAnalysis}}">
 		<view class="line">题解</view>

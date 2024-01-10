@@ -3,13 +3,6 @@ const react = {
   category: "React",
   questions: [
     {
-      title: "元素水平垂直居中的方法有哪些",
-      desc: "面试官：元素水平垂直居中的方法有哪些？如果元素不定宽高呢？",
-      content:`
-
-      `
-    },
-    {
       title: "React事件绑定的方式有哪些？区别？",
       desc: "面试官：React事件绑定的方式有哪些？区别？",
       content:`

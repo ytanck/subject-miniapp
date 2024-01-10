@@ -3081,6 +3081,1071 @@ wm.get(key)
 
       `
     },
+    {
+      title: "说说你对Reflect的理解？",
+      desc: "面试官：ES6中新增的Reflect，你了解多少？",
+      content:`
+# Reflect
+
+## 概述
+
+\`Reflect\`对象与\`Proxy\`对象一样，也是 ES6 为了操作对象而提供的新 API。\`Reflect\`对象的设计目的有这样几个。
+
+（1） **将\`Object\`对象的一些明显属于语言内部的方法（比如\`Object.defineProperty\`），放到\`Reflect\`对象上。**现阶段，某些方法同时在\`Object\`和\`Reflect\`对象上部署，未来的新方法将只部署在\`Reflect\`对象上。也就是说，从\`Reflect\`对象上可以拿到语言内部的方法。
+<!-- more -->
+（2） **修改某些\`Object\`方法的返回结果，让其变得更合理**。比如，\`Object.defineProperty(obj, name, desc)\`在无法定义属性时，会抛出一个错误，而\`Reflect.defineProperty(obj, name, desc)\`则会返回\`false\`。
+
+\`\`\`javascript
+// 老写法
+try {
+  Object.defineProperty(target, property, attributes);
+  // success
+} catch (e) {
+  // failure
+}
+
+// 新写法
+if (Reflect.defineProperty(target, property, attributes)) {
+  // success
+} else {
+  // failure
+}
+\`\`\`
+
+（3） **让\`Object\`操作都变成函数行为**。某些\`Object\`操作是命令式，比如\`name in obj\`和\`delete obj[name]\`，而\`Reflect.has(obj, name)\`和\`Reflect.deleteProperty(obj, name)\`让它们变成了函数行为。
+
+\`\`\`javascript
+// 老写法
+'assign' in Object // true
+
+// 新写法
+Reflect.has(Object, 'assign') // true
+\`\`\`
+
+（4）\`Reflect\`对象的方法与\`Proxy\`对象的方法一一对应，只要是\`Proxy\`对象的方法，就能在\`Reflect\`对象上找到对应的方法。这就让\`Proxy\`对象可以方便地调用对应的\`Reflect\`方法，完成默认行为，作为修改行为的基础。也就是说，**不管\`Proxy\`怎么修改默认行为，你总可以在\`Reflect\`上获取默认行为**。
+
+\`\`\`javascript
+Proxy(target, {
+  set: function(target, name, value, receiver) {
+    var success = Reflect.set(target, name, value, receiver);
+    if (success) {
+      console.log('property ' + name + ' on ' + target + ' set to ' + value);
+    }
+    return success;
+  }
+});
+\`\`\`
+
+上面代码中，\`Proxy\`方法拦截\`target\`对象的属性赋值行为。它采用\`Reflect.set\`方法将值赋值给对象的属性，确保完成原有的行为，然后再部署额外的功能。
+
+下面是另一个例子。
+
+\`\`\`javascript
+var loggedObj = new Proxy(obj, {
+  get(target, name) {
+    console.log('get', target, name);
+    return Reflect.get(target, name);
+  },
+  deleteProperty(target, name) {
+    console.log('delete' + name);
+    return Reflect.deleteProperty(target, name);
+  },
+  has(target, name) {
+    console.log('has' + name);
+    return Reflect.has(target, name);
+  }
+});
+\`\`\`
+
+上面代码中，每一个\`Proxy\`对象的拦截操作（\`get\`、\`delete\`、\`has\`），内部都调用对应的\`Reflect\`方法，保证原生行为能够正常执行。添加的工作，就是将每一个操作输出一行日志。
+
+有了\`Reflect\`对象以后，很多操作会更易读。
+
+\`\`\`javascript
+// 老写法
+Function.prototype.apply.call(Math.floor, undefined, [1.75]) // 1
+
+// 新写法
+Reflect.apply(Math.floor, undefined, [1.75]) // 1
+\`\`\`
+
+## 静态方法
+
+\`Reflect\`对象一共有 13 个静态方法。
+
+- Reflect.apply(target, thisArg, args)
+- Reflect.construct(target, args)
+- Reflect.get(target, name, receiver)
+- Reflect.set(target, name, value, receiver)
+- Reflect.defineProperty(target, name, desc)
+- Reflect.deleteProperty(target, name)
+- Reflect.has(target, name)
+- Reflect.ownKeys(target)
+- Reflect.isExtensible(target)
+- Reflect.preventExtensions(target)
+- Reflect.getOwnPropertyDescriptor(target, name)
+- Reflect.getPrototypeOf(target)
+- Reflect.setPrototypeOf(target, prototype)
+
+上面这些方法的作用，大部分与\`Object\`对象的同名方法的作用都是相同的，而且它与\`Proxy\`对象的方法是一一对应的。下面是对它们的解释。
+
+### Reflect.get(target, name, receiver)
+
+\`Reflect.get\`方法查找并返回\`target\`对象的\`name\`属性，如果没有该属性，则返回\`undefined\`。
+
+\`\`\`javascript
+var myObject = {
+  foo: 1,
+  bar: 2,
+  get baz() {
+    return this.foo + this.bar;
+  },
+}
+
+Reflect.get(myObject, 'foo') // 1
+Reflect.get(myObject, 'bar') // 2
+Reflect.get(myObject, 'baz') // 3
+\`\`\`
+
+如果\`name\`属性部署了读取函数（getter），则读取函数的\`this\`绑定\`receiver\`。
+
+\`\`\`javascript
+var myObject = {
+  foo: 1,
+  bar: 2,
+  get baz() {
+    return this.foo + this.bar;
+  },
+};
+
+var myReceiverObject = {
+  foo: 4,
+  bar: 4,
+};
+
+Reflect.get(myObject, 'baz', myReceiverObject) // 8
+\`\`\`
+
+如果第一个参数不是对象，\`Reflect.get\`方法会报错。
+
+\`\`\`javascript
+Reflect.get(1, 'foo') // 报错
+Reflect.get(false, 'foo') // 报错
+\`\`\`
+
+### Reflect.set(target, name, value, receiver)
+
+\`Reflect.set\`方法设置\`target\`对象的\`name\`属性等于\`value\`。
+
+\`\`\`javascript
+var myObject = {
+  foo: 1,
+  set bar(value) {
+    return this.foo = value;
+  },
+}
+
+myObject.foo // 1
+
+Reflect.set(myObject, 'foo', 2);
+myObject.foo // 2
+
+Reflect.set(myObject, 'bar', 3)
+myObject.foo // 3
+\`\`\`
+
+如果\`name\`属性设置了赋值函数，则赋值函数的\`this\`绑定\`receiver\`。
+
+\`\`\`javascript
+var myObject = {
+  foo: 4,
+  set bar(value) {
+    return this.foo = value;
+  },
+};
+
+var myReceiverObject = {
+  foo: 0,
+};
+
+Reflect.set(myObject, 'bar', 1, myReceiverObject);
+myObject.foo // 4
+myReceiverObject.foo // 1
+\`\`\`
+
+注意，如果 \`Proxy\`对象和 \`Reflect\`对象联合使用，前者拦截赋值操作，后者完成赋值的默认行为，而且传入了\`receiver\`，那么\`Reflect.set\`会触发\`Proxy.defineProperty\`拦截。
+
+\`\`\`javascript
+let p = {
+  a: 'a'
+};
+
+let handler = {
+  set(target, key, value, receiver) {
+    console.log('set');
+    Reflect.set(target, key, value, receiver)
+  },
+  defineProperty(target, key, attribute) {
+    console.log('defineProperty');
+    Reflect.defineProperty(target, key, attribute);
+  }
+};
+
+let obj = new Proxy(p, handler);
+obj.a = 'A';
+// set
+// defineProperty
+\`\`\`
+
+上面代码中，\`Proxy.set\`拦截里面使用了\`Reflect.set\`，而且传入了\`receiver\`，导致触发\`Proxy.defineProperty\`拦截。这是因为\`Proxy.set\`的\`receiver\`参数总是指向当前的 \`Proxy\`实例（即上例的\`obj\`），而\`Reflect.set\`一旦传入\`receiver\`，就会将属性赋值到\`receiver\`上面（即\`obj\`），导致触发\`defineProperty\`拦截。如果\`Reflect.set\`没有传入\`receiver\`，那么就不会触发\`defineProperty\`拦截。
+
+\`\`\`javascript
+let p = {
+  a: 'a'
+};
+
+let handler = {
+  set(target, key, value, receiver) {
+    console.log('set');
+    Reflect.set(target, key, value)
+  },
+  defineProperty(target, key, attribute) {
+    console.log('defineProperty');
+    Reflect.defineProperty(target, key, attribute);
+  }
+};
+
+let obj = new Proxy(p, handler);
+obj.a = 'A';
+// set
+\`\`\`
+
+如果第一个参数不是对象，\`Reflect.set\`会报错。
+
+\`\`\`javascript
+Reflect.set(1, 'foo', {}) // 报错
+Reflect.set(false, 'foo', {}) // 报错
+\`\`\`
+
+### Reflect.has(obj, name)
+
+\`Reflect.has\`方法对应\`name in obj\`里面的\`in\`运算符。
+
+\`\`\`javascript
+var myObject = {
+  foo: 1,
+};
+
+// 旧写法
+'foo' in myObject // true
+
+// 新写法
+Reflect.has(myObject, 'foo') // true
+\`\`\`
+
+如果\`Reflect.has()\`方法的第一个参数不是对象，会报错。
+
+### Reflect.deleteProperty(obj, name)
+
+\`Reflect.deleteProperty\`方法等同于\`delete obj[name]\`，用于删除对象的属性。
+
+\`\`\`javascript
+const myObj = { foo: 'bar' };
+
+// 旧写法
+delete myObj.foo;
+
+// 新写法
+Reflect.deleteProperty(myObj, 'foo');
+\`\`\`
+
+该方法返回一个布尔值。如果删除成功，或者被删除的属性不存在，返回\`true\`；删除失败，被删除的属性依然存在，返回\`false\`。
+
+如果\`Reflect.deleteProperty()\`方法的第一个参数不是对象，会报错。
+
+### Reflect.construct(target, args)
+
+\`Reflect.construct\`方法等同于\`new target(...args)\`，这提供了一种不使用\`new\`，来调用构造函数的方法。
+
+\`\`\`javascript
+function Greeting(name) {
+  this.name = name;
+}
+
+// new 的写法
+const instance = new Greeting('张三');
+
+// Reflect.construct 的写法
+const instance = Reflect.construct(Greeting, ['张三']);
+\`\`\`
+
+如果\`Reflect.construct()\`方法的第一个参数不是函数，会报错。
+
+### Reflect.getPrototypeOf(obj)
+
+\`Reflect.getPrototypeOf\`方法用于读取对象的\`__proto__\`属性，对应\`Object.getPrototypeOf(obj)\`。
+
+\`\`\`javascript
+const myObj = new FancyThing();
+
+// 旧写法
+Object.getPrototypeOf(myObj) === FancyThing.prototype;
+
+// 新写法
+Reflect.getPrototypeOf(myObj) === FancyThing.prototype;
+\`\`\`
+
+\`Reflect.getPrototypeOf\`和\`Object.getPrototypeOf\`的一个区别是，如果参数不是对象，\`Object.getPrototypeOf\`会将这个参数转为对象，然后再运行，而\`Reflect.getPrototypeOf\`会报错。
+
+\`\`\`javascript
+Object.getPrototypeOf(1) // Number {[[PrimitiveValue]]: 0}
+Reflect.getPrototypeOf(1) // 报错
+\`\`\`
+
+### Reflect.setPrototypeOf(obj, newProto)
+
+\`Reflect.setPrototypeOf\`方法用于设置目标对象的原型（prototype），对应\`Object.setPrototypeOf(obj, newProto)\`方法。它返回一个布尔值，表示是否设置成功。
+
+\`\`\`javascript
+const myObj = {};
+
+// 旧写法
+Object.setPrototypeOf(myObj, Array.prototype);
+
+// 新写法
+Reflect.setPrototypeOf(myObj, Array.prototype);
+
+myObj.length // 0
+\`\`\`
+
+如果无法设置目标对象的原型（比如，目标对象禁止扩展），\`Reflect.setPrototypeOf\`方法返回\`false\`。
+
+\`\`\`javascript
+Reflect.setPrototypeOf({}, null)
+// true
+Reflect.setPrototypeOf(Object.freeze({}), null)
+// false
+\`\`\`
+
+如果第一个参数不是对象，\`Object.setPrototypeOf\`会返回第一个参数本身，而\`Reflect.setPrototypeOf\`会报错。
+
+\`\`\`javascript
+Object.setPrototypeOf(1, {})
+// 1
+
+Reflect.setPrototypeOf(1, {})
+// TypeError: Reflect.setPrototypeOf called on non-object
+\`\`\`
+
+如果第一个参数是\`undefined\`或\`null\`，\`Object.setPrototypeOf\`和\`Reflect.setPrototypeOf\`都会报错。
+
+\`\`\`javascript
+Object.setPrototypeOf(null, {})
+// TypeError: Object.setPrototypeOf called on null or undefined
+
+Reflect.setPrototypeOf(null, {})
+// TypeError: Reflect.setPrototypeOf called on non-object
+\`\`\`
+
+### Reflect.apply(func, thisArg, args)
+
+\`Reflect.apply\`方法等同于\`Function.prototype.apply.call(func, thisArg, args)\`，用于绑定\`this\`对象后执行给定函数。
+
+一般来说，如果要绑定一个函数的\`this\`对象，可以这样写\`fn.apply(obj, args)\`，但是如果函数定义了自己的\`apply\`方法，就只能写成\`Function.prototype.apply.call(fn, obj, args)\`，采用\`Reflect\`对象可以简化这种操作。
+
+\`\`\`javascript
+const ages = [11, 33, 12, 54, 18, 96];
+
+// 旧写法
+const youngest = Math.min.apply(Math, ages);
+const oldest = Math.max.apply(Math, ages);
+const type = Object.prototype.toString.call(youngest);
+
+// 新写法
+const youngest = Reflect.apply(Math.min, Math, ages);
+const oldest = Reflect.apply(Math.max, Math, ages);
+const type = Reflect.apply(Object.prototype.toString, youngest, []);
+\`\`\`
+
+### Reflect.defineProperty(target, propertyKey, attributes)
+
+\`Reflect.defineProperty\`方法基本等同于\`Object.defineProperty\`，用来为对象定义属性。未来，后者会被逐渐废除，请从现在开始就使用\`Reflect.defineProperty\`代替它。
+
+\`\`\`javascript
+function MyDate() {
+  /*…*/
+}
+
+// 旧写法
+Object.defineProperty(MyDate, 'now', {
+  value: () => Date.now()
+});
+
+// 新写法
+Reflect.defineProperty(MyDate, 'now', {
+  value: () => Date.now()
+});
+\`\`\`
+
+如果\`Reflect.defineProperty\`的第一个参数不是对象，就会抛出错误，比如\`Reflect.defineProperty(1, 'foo')\`。
+
+这个方法可以与\`Proxy.defineProperty\`配合使用。
+
+\`\`\`javascript
+const p = new Proxy({}, {
+  defineProperty(target, prop, descriptor) {
+    console.log(descriptor);
+    return Reflect.defineProperty(target, prop, descriptor);
+  }
+});
+
+p.foo = 'bar';
+// {value: "bar", writable: true, enumerable: true, configurable: true}
+
+p.foo // "bar"
+\`\`\`
+
+上面代码中，\`Proxy.defineProperty\`对属性赋值设置了拦截，然后使用\`Reflect.defineProperty\`完成了赋值。
+
+### Reflect.getOwnPropertyDescriptor(target, propertyKey)
+
+\`Reflect.getOwnPropertyDescriptor\`基本等同于\`Object.getOwnPropertyDescriptor\`，用于得到指定属性的描述对象，将来会替代掉后者。
+
+\`\`\`javascript
+var myObject = {};
+Object.defineProperty(myObject, 'hidden', {
+  value: true,
+  enumerable: false,
+});
+
+// 旧写法
+var theDescriptor = Object.getOwnPropertyDescriptor(myObject, 'hidden');
+
+// 新写法
+var theDescriptor = Reflect.getOwnPropertyDescriptor(myObject, 'hidden');
+\`\`\`
+
+\`Reflect.getOwnPropertyDescriptor\`和\`Object.getOwnPropertyDescriptor\`的一个区别是，如果第一个参数不是对象，\`Object.getOwnPropertyDescriptor(1, 'foo')\`不报错，返回\`undefined\`，而\`Reflect.getOwnPropertyDescriptor(1, 'foo')\`会抛出错误，表示参数非法。
+
+### Reflect.isExtensible (target)
+
+\`Reflect.isExtensible\`方法对应\`Object.isExtensible\`，返回一个布尔值，表示当前对象是否可扩展。
+
+\`\`\`javascript
+const myObject = {};
+
+// 旧写法
+Object.isExtensible(myObject) // true
+
+// 新写法
+Reflect.isExtensible(myObject) // true
+\`\`\`
+
+如果参数不是对象，\`Object.isExtensible\`会返回\`false\`，因为非对象本来就是不可扩展的，而\`Reflect.isExtensible\`会报错。
+
+\`\`\`javascript
+Object.isExtensible(1) // false
+Reflect.isExtensible(1) // 报错
+\`\`\`
+
+### Reflect.preventExtensions(target)
+
+\`Reflect.preventExtensions\`对应\`Object.preventExtensions\`方法，用于让一个对象变为不可扩展。它返回一个布尔值，表示是否操作成功。
+
+\`\`\`javascript
+var myObject = {};
+
+// 旧写法
+Object.preventExtensions(myObject) // Object {}
+
+// 新写法
+Reflect.preventExtensions(myObject) // true
+\`\`\`
+
+如果参数不是对象，\`Object.preventExtensions\`在 ES5 环境报错，在 ES6 环境返回传入的参数，而\`Reflect.preventExtensions\`会报错。
+
+\`\`\`javascript
+// ES5 环境
+Object.preventExtensions(1) // 报错
+
+// ES6 环境
+Object.preventExtensions(1) // 1
+
+// 新写法
+Reflect.preventExtensions(1) // 报错
+\`\`\`
+
+### Reflect.ownKeys (target)
+
+\`Reflect.ownKeys\`方法用于返回对象的所有属性，基本等同于\`Object.getOwnPropertyNames\`与\`Object.getOwnPropertySymbols\`之和。
+
+\`\`\`javascript
+var myObject = {
+  foo: 1,
+  bar: 2,
+  [Symbol.for('baz')]: 3,
+  [Symbol.for('bing')]: 4,
+};
+
+// 旧写法
+Object.getOwnPropertyNames(myObject)
+// ['foo', 'bar']
+
+Object.getOwnPropertySymbols(myObject)
+//[Symbol(baz), Symbol(bing)]
+
+// 新写法
+Reflect.ownKeys(myObject)
+// ['foo', 'bar', Symbol(baz), Symbol(bing)]
+\`\`\`
+
+如果\`Reflect.ownKeys()\`方法的第一个参数不是对象，会报错。
+
+## 实例：使用 Proxy 实现观察者模式
+
+**观察者模式（Observer mode）指的是函数自动观察数据对象，一旦对象有变化，函数就会自动执行**。
+
+\`\`\`javascript
+const person = observable({
+  name: '张三',
+  age: 20
+}); // 观察目标
+
+function print() {
+  console.log(\`\${person.name}, \${person.age}\`)
+} // 观察者
+
+observe(print); // 启动观察
+person.name = '李四';
+// 输出
+// 李四, 20
+\`\`\`
+
+上面代码中，数据对象\`person\`是观察目标，函数\`print\`是观察者。一旦数据对象发生变化，\`print\`就会自动执行。
+
+下面，使用 Proxy 写一个观察者模式的最简单实现，即实现\`observable\`和\`observe\`这两个函数。思路是\`observable\`函数返回一个原始对象的 Proxy 代理，拦截赋值操作，触发充当观察者的各个函数。
+
+\`\`\`javascript
+const queuedObservers = new Set();
+
+const observe = fn => queuedObservers.add(fn);
+const observable = obj => new Proxy(obj, {set});
+
+function set(target, key, value, receiver) {
+  const result = Reflect.set(target, key, value, receiver);
+  queuedObservers.forEach(observer => observer());
+  return result;
+}
+\`\`\`
+
+上面代码中，先定义了一个\`Set\`集合，所有观察者函数都放进这个集合。然后，\`observable\`函数返回原始对象的代理，拦截赋值操作。拦截函数\`set\`之中，会自动执行所有观察者。
+      `
+    },
+    {
+      title: "ES6来简化代码,你都用过哪些?",
+      desc: "ES6来简化代码,你都用过哪些",
+      content:`
+### 块级作用域
+
+为什么需要块级作用域?
+
+ES5 只有全局作用域和函数作用域，没有块级作用域，这导致很多场景不合理。
+
+- 第一种场景，内层变量可能会覆盖外层变量。
+
+\`\`\`js
+var tmp = new Date();
+function fn() {
+  console.log(tmp);
+  if (false) {
+    var tmp = "hello world";
+  }
+}
+fn(); // undefined
+
+\`\`\`
+
+以上代码的原意是， if 代码块的外部使用外层的 tmp 变量，内部使用内层的 tmp 变量。但是，函数 \`fn\` 执行后，输出结果为 \`undefined\` ，原因在于变量提升导致内层的 tmp 变量覆盖了外层的 tmp 变量。
+
+- 第二种场景，用来计数的循环变量泄露为全局变量。
+
+\`\`\`js
+var s = "hello";
+for (var i = O; i < s.length; i++) {
+  console.log(s[i]);
+}
+console.log(i); // 5
+
+\`\`\`
+
+上面的代码中，变量 \`i\` 只用来控制循环，但是循环结束后，它并没有消失，而是泄露成了全局变量。
+
+\`let\` 实际上为 \`JavaScript\` 新增了块级作用域。
+
+\`\`\`js
+function fl() {
+  let n = 5;
+  if (true) {
+    let n = 10;
+  }
+  console.log(n); // 5
+}
+
+\`\`\`
+
+上面的函数有两个代码块，都声明了变量 \`n\`，运行后输出 \`5\` 。这表示外层代码块不受内层代码块的影响。如果使用 \`var\` 定义变量 ，最后输出的值就是 \`10\`
+
+那么我们能利用\`块级作用域\`做什么呢？
+
+我们先来做道面试题
+
+\`\`\`js
+for (var i = 0; i < 5; i++) {
+  setTimeout(() => {
+    console.log(i);
+  }, 1000);
+}
+// 5 5 5 5 5
+
+\`\`\`
+
+改成 \`ES6\` 中的 let
+
+\`\`\`js
+for (let i = 0; i < 5; i++) {
+  setTimeout(() => {
+    console.log(i);
+  }, 1000);
+}
+// 0 1 2 3 4
+
+\`\`\`
+
+看到这，相信聪明的你已经理解块级作用域的好处了 O(∩_∩)O
+
+那么 \`ES5\` 能不能实现 \`块级作用域\` 的效果呢? 可以的，我们可以利用闭包
+
+\`\`\`js
+for (var i = 0; i < 5; i++) {
+  (function (index) {
+    setTimeout(() => {
+      console.log(index);
+    }, 1000);
+  })(i);
+}
+// 0 1 2 3 4
+
+\`\`\`
+
+### 解构
+
+> 解构 ：是将一个数据结构分解为更小的部分的过程。ES6 中，从数组和对象中提取值，对变量进行赋值。
+
+那么解构有什么用处呢？
+
+1. 可以大大的简化变量声明操作。
+
+\`\`\`js
+// ES5
+var foo = 1;
+var bar = 2;
+var baz = 3;
+
+// ES6
+let [foo, bar, baz] = [1, 2, 3];
+
+\`\`\`
+
+1. 变量交换：看起来如同镜像。赋值语句的左侧的解构模式，右侧是临时创建的数组字面量。x 被赋值为数组中的 y，y 被赋值为数组中的 x。
+
+\`\`\`js
+let x = 1;
+let y = 2;
+[x, y] = [y, x];
+// x = 2, y = 1
+
+\`\`\`
+
+1. 对象解构
+
+\`\`\`js
+var obj = { x: 1, y: 2, c: 1 };
+let { x, y } = obj;
+// x = 1
+// y = 2
+
+\`\`\`
+
+1. 字符串解构
+
+\`\`\`js
+const [a, b, c, d, e] = "hello";
+// a => h
+// b => e
+// c => l
+// d => l
+// e => o
+
+\`\`\`
+
+1. 函数参数解构
+
+\`\`\`js
+const xueyue = {
+  name: "雪月",
+  age: 18,
+};
+
+function getAge({ name, age }) {
+  return \`\${name}今年\${age}岁\`;
+}
+
+getAge(xueyue); // 雪月今年18岁
+
+\`\`\`
+
+### 箭头函数
+
+\`ES6\` 允许使用箭头 \`=>\` 定义函数
+
+\`\`\`js
+var f = (v) => v;
+
+// 等同于 ES5 的
+var f = function (v) {
+  return v;
+};
+
+\`\`\`
+
+如果箭头函数不需要参数或需要多个参数，就使用圆括号代表参数部分。
+
+\`\`\`js
+var f = () => 5;
+// 等同于 ES5 的
+var f = function () {
+  return 5;
+};
+
+var sum = (numl, num2) => numl + num2;
+// 等同于 ES5 的
+var sum = function (numl, num2) {
+  return numl + num2;
+};
+
+\`\`\`
+
+箭头函数可以与解构结合使用。
+
+\`\`\`js
+const full = ({ first, last }) => first + " " + last;
+// 等同于 ES5 的
+function full(person) {
+  return person.first + " " + person.last;
+}
+
+\`\`\`
+
+箭头函数使得表达更加简洁
+
+\`\`\`js
+const isEven = (n) => n % 2 === 0;
+const square = (n) => n * n;
+
+var result = values.sort((a, b) => a - b);
+// 等同于 ES5 的
+var result = values.sort(function (a, b) {
+  return a - b;
+});
+
+\`\`\`
+
+上面代码只用了两行，就定义了两个简单的工具函数。如果不用箭头函数，可能就要占用多行，而且还不如现在这样写醒目。
+
+**箭头函数使用注意点**
+
+1. 函数体内的 \`this\` 对象，就是定义时所在的对象，而不是使用时所在的对象。
+2. 不可以当作构造函数，也就是说，不可以使用 \`new\` 命令，否则会抛出一个错误。
+3. 不可以使用 \`arguments\` 对象，该对象在函数体内不存在。如果要用，可以用 \`rest\` 参数代替。
+4. 不可以使用 \`yield\` 命令，因此箭头函数不能用作 \`Generator\` 函数。
+
+上面四点中，第一点尤其值得注意。\`this\` 对象的指向是可变的，但是在箭头函数中，它是固定的。
+
+\`\`\`js
+// ES6
+function foo() {
+  setTimeout(() => {
+    console.log("id:", this.id);
+  }, 100);
+}
+
+// 转换成ES5
+function foo() {
+  var _this = this;
+
+  setTimeout(function () {
+    console.log("id:", _this.id);
+  }, 100);
+}
+
+\`\`\`
+
+上面代码中，转换后的 \`ES5\` 版本清楚地说明了，箭头函数里面根本没有自己的 \`this\`，而是引用外层的 \`this\`。
+
+### 模板字符串
+
+> 模板字符串（ template string ）是增强版的字符串 ，用反引号 \` (\`\`) \` 标识 。它可以当作普通字符串使用，也可以用来定义多行字符串，或者在字符串中嵌入变量。
+
+\`\`\`js
+const { log } = console;
+const name = "雪月";
+const age = 18;
+
+// 普通字符串拼接
+const result = name + "今年" + age + "岁";
+// 使用模板字符串
+const result2 = \`\${name}今年\${age}岁\`;
+log(result); // 雪月今年18岁
+log(result2); // 雪月今年18岁
+
+// \${} 大括号可以放入任意的 JavaScript 表达式，可以进行运算
+const result3 = \`\${name}今年\${age * 2}岁\`;
+log(result3); // 雪月今年36岁
+
+\`\`\`
+
+### 剩余参数 / 展开语法
+
+ES6 引入了 rest 参数（形式为\`...变量名\`），用于获取函数的多余参数，这样就不需要使用 \`arguments\` 对象了。\`rest\` 参数搭配的变量是一个数组，该变量将多余的参数放入其中。
+
+\`\`\`js
+function sortNumbers() {
+  return Array.prototype.slice.call(arguments).sort();
+}
+// 使用 rest
+const sortNumbers = (...numbers) => numbers.sort();
+
+\`\`\`
+
+比较上面的两种写法可以发现， \`rest\` 参数的写法更自然也更简洁。
+
+扩展运算符（ \`spread\` ）是三个点（...） 如同 \`rest\` 参数的逆运算 将一个数组转为用逗号分隔的参数序列
+
+\`\`\`js
+console.log(...[1, 2, 3]);
+// 1 2 3
+
+console.log(1, ...[2, 3, 4], 5);
+// 1 2 3 4 5
+
+\`\`\`
+
+下面是扩展运算符取代 \`apply\` 方法的一个实际例子 应用 \`Math.max\` 方法简化求出数组中的最大元素。
+
+\`\`\`js
+// ESS 的写法
+Math.max.apply(null, [14, 3, 77]);
+// ES6 的写法
+Math.max(...[14, 3, 77]);
+// 等同于
+Math.max(14, 3, 77);
+
+\`\`\`
+
+扩展运算符提供了数组合并的新写法。
+
+\`\`\`js
+//  ESS
+[1, 2].concat(more);
+// ES6
+[1, 2, ...more];
+
+\`\`\`
+
+对象的扩展运算符（...）用于取出参数对象的所有可遍历属性，拷贝到当前对象之中。
+
+\`\`\`js
+let z = { a: 3, b: "bb" };
+let n = { ...z };
+n; // { a: 3, b: 'bb' }
+n === z; // false
+
+\`\`\`
+
+**特别注意：** \`...\`扩展对象，只能做到当对象属性是 \`基本数据类型\` 才是 \`深拷贝\`，如果是 \`引用数据类型\`，那就是\`浅拷贝\`。
+
+\`\`\`js
+let z = { a: 3, b: "bb", c: { name: "ccc" } };
+let n = { ...z };
+
+n; // { a: 3, b: 'bb', c: { name: 'ccc' } }
+n === z; // false
+n.c === z.c; // true
+// n.c 跟 z.c 是同一个引用地址
+
+\`\`\`
+
+### 对象字面量简写语法
+
+\`\`\`js
+const name = "雪月";
+
+// ES5写法
+const obj = {
+  name: name,
+  f: function () {
+    console.log(this.name);
+  },
+};
+
+// ES6简写
+const obj2 = {
+  name,
+  f() {
+    console.log(this.name);
+  },
+};
+
+obj.f(); // 雪月
+obj2.f(); // 雪月
+
+\`\`\`
+
+使用 \`vue\` 的同学是不是感到很熟悉
+
+\`\`\`js
+new Vue({
+  el: "#app",
+  data() {
+    return {
+      list: [],
+    };
+  },
+});
+
+\`\`\`
+
+### 数组实例的 includes()
+
+Array.prototype.includes 方法返回一个布尔值，表示某个数组是否包含给定的值，与字符串的 includes 方法类似。ES2016 引入了该方法。
+
+\`\`\`js
+[1, 2, 3].includes(2); // true
+[1, 2, 3].includes(4); // false
+[1, 2, NaN].includes(NaN); // true
+
+\`\`\`
+
+没有该方法之前，我们通常使用数组的 indexOf 方法，检查是否包含某个值。
+
+\`\`\`js
+// ES5
+if (arr.indexOf(el) !== -1) {
+  // ...
+}
+
+// ES6
+if (arr.includes(el)) {
+  // ...
+}
+
+// 那么 indexOf 能不能做到类似于 includes 的写法呢？ 我们可以利用 ~ 位运算符
+if (~arr.indexOf(el)) {
+  // ...
+}
+
+\`\`\`
+
+\`indexOf\` 方法有两个缺点，一是不够语义化，它的含义是找到参数值的第一个出现位置，所以要去比较是否不等于-1，表达起来不够直观。二是，它内部使用严格相等运算符（===）进行判断，这会导致对 \`NaN\` 的误判。
+
+\`\`\`js
+[NaN].indexOf(NaN);
+// -1
+
+\`\`\`
+
+\`includes\` 使用的是不一样的判断算法，就没有这个问题
+
+\`\`\`js
+[NaN].includes(NaN);
+// true
+
+\`\`\`
+
+### Async/await 异步语法
+
+\`ES2017\` 标准引入了 \`async\` 函数，使得异步操作变得更加方便。
+
+\`async\` 函数是什么？一句话，它就是 \`Generator\` 函数的语法糖。
+
+\`\`\`js
+async function getTitle(url) {
+  let response = await fetch(url);
+  let html = await response.text();
+  return html.match(/<title>([\s\S]+)<\/title>/i)[1];
+}
+
+getTitle("https://tc39.github.io/ecma262/").then((res) => console.log(res));
+
+\`\`\`
+
+上面代码中，函数 \`getTitle\` 内部有三个操作：\`抓取网页\`、\`取出文本\`、\`匹配页面标题\`。只有这三个操作全部完成，才会执行 \`then\` 方法里面的 \`console.log\`
+
+### 结束（意犹未尽）
+
+文章介绍了 \`ES6\` 常用的一些语法以及使用场景; 但是 \`ES6\` 内容远不止于此，感兴趣的同学可以去 \`阮一峰老师的\` ES6 入门教程[1] 一书中查看详细内容。如果您认可这本书，也可以去正版渠道购买书籍。这样可以使出版社不因出版开源书籍而亏钱，进而鼓励更多的作者开源自己的书籍。
+
+### 后记（列举 API）
+
+还有很多 \`ES6\` 实用的 \`API\` 我就简单提及一下，朋友们看看平时是否有用到
+
+\`\`\`js
+[1, 4, -5, 10].find((n) => n < 0);
+// -5
+[1, 5, 10, 15].findIndex((value, index, arr) => value > 9);
+// 2
+[1, 2, [3, [4, 5]]].flat();
+// [1, 2, 3, [4, 5]]
+[1, 2, [3, [4, 5]]].flat(2);
+// [1, 2, 3, 4, 5]
+[3, 8, 54, 8, 3, NaN, NaN, "NaN", "NaN"].filter(
+  (number, index, arr) => arr.indexOf(number) === index
+);
+// [3, 8, 54, "NaN"] 利用filter过滤去重，注意会漏掉NaN
+[1, 2, 3, 4].map((item) => item * 2);
+// [2, 4, 6, 8] 利用map返回一个新数组，不改变原数组
+
+// 使用 reduce 求和; reduce功能极其强大 ! yyds
+[0, 1, 2, 3, 4].reduce(function (
+  accumulator,
+  currentValue,
+  currentIndex,
+  array
+) {
+  return accumulator + currentValue;
+});
+// 10
+
+// ES2017 引入了跟 Object.keys 配套的 Object.values 和 Object.entries，作为遍历一个对象的补充手段，
+// 供 for...of 循环使用。
+let { keys, values, entries } = Object;
+let obj = { a: 1, b: 2, c: 3 };
+
+for (let key of keys(obj)) {
+  console.log(key); // 'a', 'b', 'c'
+}
+
+for (let value of values(obj)) {
+  console.log(value); // 1, 2, 3
+}
+
+for (let [key, value] of entries(obj)) {
+  console.log([key, value]); // ['a', 1], ['b', 2], ['c', 3]
+};
+\`\`\`
+
+      `
+    },
   ]
 }
 

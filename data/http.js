@@ -3,13 +3,6 @@ const http = {
 	category: "HTTP",
 	questions: [
 		{
-			title: "js元素水平垂直居中的方法有哪些",
-			desc: "面试官：元素水平垂直居中的方法有哪些？如果元素不定宽高呢",
-			content:`
-			
-			`
-		},
-		{
 			title: "HTTP1.0/1.1/2.0 的区别?",
 			desc: "面试官：说说 HTTP1.0/1.1/2.0 的区别?",
 			content:`
