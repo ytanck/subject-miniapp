@@ -1,0 +1,60 @@
+/* pages/subDetail.wxss */
+page{
+	text-align: center;
+	padding-bottom: 20rpx;
+}
+.title{
+	padding: 0 30rpx;
+	margin: 30rpx auto;
+	font-size: 34rpx;
+	font-weight: bold;
+	text-align: left;
+}
+.line{
+	position: relative;
+	font-size: 24rpx;
+	color: #1989fa;
+}
+.line::before{
+	position: absolute;
+	left: 30rpx;
+	top: 20rpx;
+	content: '';
+	width: 40%;
+	height: 2rpx;
+	background-color: #1989fa;
+}
+.line::after{
+	position: absolute;
+	right: 30rpx;
+	top: 20rpx;
+	content: '';
+	width: 40%;
+	height: 2rpx;
+	background-color: #1989fa;
+}
+.desc {
+	padding: 30rpx;
+	/* font-size: 30rpx; */
+	color: rgb(160, 160, 160);
+	text-align: left;
+}
+/* .content {
+	font-size: 30rpx;
+	color: rgb(150, 150, 150);
+} */
+
+.act-btn{
+	padding: 0 30rpx;
+	margin-top: 20rpx;
+	display: flex;
+	justify-content: space-around;
+	font-size: 28rpx;
+}
+.act-btn view{
+	width: 160rpx;
+	height: 70rpx;
+	line-height: 70rpx;
+	color: rgb(100, 100, 100);
+	border: 1px solid #ccc;
+}

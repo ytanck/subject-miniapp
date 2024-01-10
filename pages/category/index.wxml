@@ -1,0 +1,20 @@
+<view class="cate-container">
+	<view class="courses">
+		<scroll-view scroll-y="true" class="courses-left">
+			<block wx:for="{{courseList}}" wx:key="index">
+				<view wx:if="{{item.category}}" class="{{selectTabIndex==index?'active':''}}" data-index="{{index}}" bindtap="selectTab">
+					<text>{{item.category}}</text>
+				</view>
+			</block>
+		</scroll-view>
+		<scroll-view scroll-y="true" class="courses-right">
+			<block wx:for="{{courseList[selectTabIndex].questions}}"  wx:key="index">
+			<view class="r-item" data-index='{{index}}' data-item='{{item}}' catchtap="goDetail">
+				<view class="ellipsis" data-index='{{index}}' data-item='{{item}}'>{{item.title}}</view>
+				<text wx:if="{{item.desc}}" class="ellipsis" data-index='{{index}}' data-item='{{item}}'>{{item.desc}}</text>
+			</view>
+			</block>
+			<view wx:if="{{courseList[selectTabIndex].questions&&courseList[selectTabIndex].questions.length==0}}" class="no-course" style="background: url(/images/no_res.png) no-repeat center / 100%;" ><text>暂无数据</text></view>
+		</scroll-view>
+	</view>
+</view>

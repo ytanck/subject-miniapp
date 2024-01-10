@@ -1,0 +1,19 @@
+<!--pages/subDetail.wxml-->
+<view>
+	<view class="title">
+		{{curItem.title}}
+	</view>
+	<view class="line">详情</view>
+	<view class="desc">{{curItem.desc}}</view>
+
+	<view class="content" wx:if="{{isShowAnalysis}}">
+		<view class="line">题解</view>
+		<towxml nodes="{{article}}"/>
+	
+	</view>
+	<view class="act-btn">
+		<view bindtap="preSub">上一题</view>
+		<view bindtap="showAnalysis">{{isShowAnalysis?'隐藏':'显示'}}题解</view>
+		<view bindtap="nextSub">下一题</view>
+	</view>
+</view>

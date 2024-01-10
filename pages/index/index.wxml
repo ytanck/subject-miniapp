@@ -1,0 +1,26 @@
+<!--index.wxml-->
+<view class="home-page-header">
+  <view class="swiper-wrap">
+    <swiper wx:if="{{imgSrcs.length > 0}}" class="banner" indicator-dots='true' autoplay='true' interval='3000' circular='true'>
+      <swiper-item wx:for="{{imgSrcs}}" wx:key="index" class="banner-item">
+        <image class="banner-img" src="{{item}}" mode="scaleToFill"></image>
+      </swiper-item>
+    </swiper>
+  </view>
+</view>
+<view class="nav">
+  <block wx:for="{{nav}}" wx:for-item="item" wx:key="index">
+    <view class="nav-item">
+      <image src="{{item.imgurl}}"></image>
+      <text>{{item.title}}</text>
+    </view>
+  </block>
+</view>
+<!-- <view class="ad">
+  <block wx:for="{{ad}}" wx:for-item="item" wx:key="index">
+    <view >
+      <image src="{{item.imgurl}}"></image>
+    </view>
+  </block>
+</view> -->
+<circle-view></circle-view>
