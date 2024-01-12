@@ -1,9 +1,15 @@
 
 const {formatTime} = require('../../utils/util.js')
-
+const defaultAvatarUrl = 'http://gyjx-web.oss-cn-beijing.aliyuncs.com/upload/common/202411/header.png'
 Page({
   data: {
-    userInfo: {},
+    userInfo: {
+      avatarUrl: defaultAvatarUrl,
+      nickName: '',
+    },
+  },
+  onLoad(){
+    console.log('onLoad');
   },
   login() {
     const that=this
@@ -21,6 +27,19 @@ Page({
         // })
         
       }
+    })
+  },
+  onChooseAvatar(e) {
+    console.log(1,e);
+    const { avatarUrl } = e.detail
+    this.setData({
+      "userInfo.avatarUrl": avatarUrl,
+    })
+  },
+  onInputChange(e) {
+    const nickName = e.detail.value
+    this.setData({
+      "userInfo.nickName": nickName
     })
   },
 })

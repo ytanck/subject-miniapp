@@ -1,2 +1,15 @@
-<!--pages/cart.wxml-->
-<text>pages/cart.wxml</text>
+<view class="msg-container">
+	<scroll-view scroll-y="true" class="content-wrap">
+		<view class="content-item">
+			<view class="msg-wrap">
+				<image src='/images/icon-user.png'></image>
+				<text class="text">您好，我是您的面试官，请告诉我您的简历和擅长的技术，我将会对你进行一场面试。
+				</text>
+			</view>
+		</view>
+		
+	</scroll-view>
+	<view class="footer">
+		<input style="background: #eee url(/images/icon-send.png) no-repeat 98% 50% / 65rpx 60rpx;" class="weui-input" auto-focus placeholder="请输入你的内容"/>
+	</view>
+</view>

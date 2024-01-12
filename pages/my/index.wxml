@@ -1,14 +1,14 @@
 <view class="topBG">
   <image class="topImage" src="https://bmob-cdn-24322.bmobcloud.com/2019/05/27/3cb30f6c407826b2806965251bd6dc60.png"></image>
-  <view wx:if="{{userInfo.avatarurl}}">
-    <image class="head" src="{{userInfo.avatarurl}}"></image>
+  <view wx:if="{{userInfo.nickName}}">
+    <image class="head" src="{{userInfo.avatarUrl}}"></image>
     <view class="name">{{userInfo.nickName}}</view>
   </view>
-  <view wx:else bindtap='login' style='background-color:transparent;'>
-    <view>
-      <image class='head' style='z-index:9;' src='/images/header.png'></image>
-      <view class="name">点击登录</view>
-    </view>
+  <view wx:else  style='background-color:transparent;'>
+    <button style='background-color:transparent;' open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+      <image class='head' style='z-index:9;' src="{{userInfo.avatarUrl}}"></image>
+      <!-- <view class="name">点击登录</view> -->
+    </button>
   </view>
 </view>
 

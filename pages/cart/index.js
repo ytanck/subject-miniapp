@@ -5,7 +5,20 @@ Page({
    * 页面的初始数据
    */
   data: {
-
+    chatList:[
+      {
+        id:1,
+        role:'user',
+        dateTime:'dateTime',
+        text:'text',
+      },
+      {
+        id:2,
+        role:'',
+        dateTime:'dateTime2',
+        text:'text2',
+      },
+    ]
   },
 
   /**
