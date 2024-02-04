@@ -4,8 +4,10 @@
     "pages/category/index",
     "pages/cart/index",
     "pages/my/index",
-    "pages/sub-detail/index"
+    "pages/sub-detail/index",
+    "pages/login/index"
   ],
+  "subpackages": [],
   "tabBar": {
     "color": "#666666",
     "selectedColor": "#1bd0ad",
