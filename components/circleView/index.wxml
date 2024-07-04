@@ -2,8 +2,7 @@
 	<view class="question-wrap">
 		<view class="question">
 			<view class="left">
-				<view bindtap="orderGo" class="home-icon" data-mode="2">
-
+				<view bindtap="randomGo" class="home-icon" data-mode="2">
 					<view class="home-icon">
 						<image mode="aspectFit" src="/images/sjlx.png"></image>
 						<text>随机练习</text>
@@ -12,7 +11,6 @@
 				</view>
 			</view>
 			<view bindtap="orderGo" class="center">
-
 				<view>
 					<view class="progress-bg">
 						<view class="progress-wrap">
@@ -26,7 +24,6 @@
 			</view>
 			<view class="right">
 				<view bindtap="defaultGo" class="home-icon" data-ind="0">
-
 					<view class="home-icon" formType="submit">
 						<image mode="aspectFit" src="/images/wdct.png"></image>
 						<text>我的错题</text>
@@ -58,10 +55,11 @@
 				</view>
 			</view>
 			<view class="right">
-				<view bindtap="defaultGo" class="home-icon" data-ind="1">
+				<view bindtap="collectGo" class="home-icon" data-ind="1">
 					<image mode="aspectFit" src="/images/wdsc.png"></image>
 					<text>我的收藏</text>
 				</view>
+				<!-- 可添加更多 -->
 				<!-- <view class="home-icon">
 					<view class="home-icon" formType="submit">
 						<image mode="aspectFit" src="/images/zxlx.png"></image>
@@ -71,7 +69,6 @@
 			</view>
 		</view>
 	</view>
-	<!-- cell -->
 
 	<view bindtap="headerMenu" class="cell">
 		<view class="cell-left">

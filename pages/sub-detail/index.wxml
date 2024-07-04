@@ -8,12 +8,12 @@
 
 	<view class="content" wx:if="{{isShowAnalysis}}">
 		<view class="line">题解</view>
-		<towxml nodes="{{article}}"/>
-	
+		<towxml nodes="{{article}}" />
+
 	</view>
 	<view class="act-btn">
-		<view bindtap="preSub">上一题</view>
+		<view class="{{index.subIndex==0?'disabled':''}}" bindtap="preSub">上一题</view>
 		<view bindtap="showAnalysis">{{isShowAnalysis?'隐藏':'显示'}}题解</view>
-		<view bindtap="nextSub">下一题</view>
+		<view class="{{index.subIndex==questions.length - 1?'disabled':''}}" bindtap="nextSub">下一题</view>
 	</view>
 </view>

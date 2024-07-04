@@ -19,6 +19,9 @@ Page({
       }) 
     }
   },
+  myQuestion(){
+    console.log('myQuestion');
+  },
   login() {
     console.log('login');
     // const that=this

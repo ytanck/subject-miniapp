@@ -25,10 +25,14 @@ Page({
    */
   data: {
     md: str,
-    curItem: {},
-    article: {},
+    questions: {}, // 类目下的所有题
+    curItem: {}, // 当前题
+    article: {}, // 当前题解
     isShowAnalysis: false,
-    index: {},
+    index: {
+      tabIndex: 0,
+      subIndex: 0
+    },
   },
 
   /**
@@ -42,16 +46,16 @@ Page({
     const {
       questions
     } = app.courseList[tabIndex]
-
+    console.log('onload', questions);
     this.setData({
+      questions,
       curItem: questions[subIndex],
       index: {
-        tabIndex,
-        subIndex
+        tabIndex: Number(tabIndex),
+        subIndex: Number(subIndex)
       }
     })
     // this.parseToMarkDown(str)
-    this.parseToMarkDown(questions[subIndex].content || 'xxx')
   },
   parseToMarkDown(content) {
 
@@ -81,46 +85,46 @@ Page({
     });
   },
   showAnalysis() {
+    const {
+      questions,
+      index
+    } = this.data
     wx.showLoading({
       title: '加载中',
     })
     this.setData({
       isShowAnalysis: !this.data.isShowAnalysis
     }, () => {
+      this.parseToMarkDown(questions[index.subIndex].content || 'error')
       wx.hideLoading()
     })
   },
   preSub() {
     const {
-      tabIndex,
-      subIndex
-    } = this.data.index
-    console.log(tabIndex, subIndex);
-    const {
-      questions
-    } = app.courseList[tabIndex]
+      questions,
+      index
+    } = this.data
+    console.log(index);
+    if (index.subIndex == 0) return
+    const preIndex = Number(index.subIndex) - 1
     this.setData({
-      curItem:questions[subIndex],
-      index: {
-        subIndex: subIndex + 1
-      }
+      curItem: questions[preIndex],
+      'index.subIndex': preIndex,
+      isShowAnalysis: false
     })
   },
   nextSub() {
     const {
-      tabIndex,
-      subIndex
-    } = this.data.index
-    const {
-      questions
-    } = app.courseList[tabIndex]
-    console.log(tabIndex,this.data.index);
+      questions,
+      index
+    } = this.data
+    console.log(index);
+    if (index.subIndex == questions.length - 1) return
+    const nextIndex = Number(index.subIndex) + 1
     this.setData({
-      curItem:questions[subIndex+1],
-      index: {
-        tabIndex:tabIndex,
-        subIndex: subIndex + 1
-      }
+      curItem: questions[nextIndex],
+      'index.subIndex': nextIndex,
+      isShowAnalysis: false
     })
   },
   /**
